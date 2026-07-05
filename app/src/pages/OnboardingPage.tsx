@@ -63,12 +63,13 @@ export default function OnboardingPage() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.from("profiles").update({
+    const { error } = await supabase.from("profiles").upsert({
+      id: userId,
       university: sanitizeInput(university),
       program: sanitizeInput(program.trim()),
       year_of_study: Number(year),
       full_name: fullName ? sanitizeInput(fullName) : undefined,
-    }).eq("id", userId);
+    });
 
     // default opt-in for university-request notifications happens automatically (driven by profile.university).
     // create empty subscriptions row so settings page works.
@@ -106,7 +107,7 @@ export default function OnboardingPage() {
           <span className="mt-1 h-0.5 w-8 bg-primary rounded-full" />
         </div>
         <Card className="border-0 shadow-elevated">
-          <CardHeader>
+          <CardHeader className="text-center">
             <CardTitle className="font-display text-2xl">Tell us about you</CardTitle>
             <CardDescription>Three quick details so we can match you with the right materials.</CardDescription>
           </CardHeader>

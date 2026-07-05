@@ -34,7 +34,7 @@ export default function DonationWidget() {
             <Heart className="h-5 w-5 text-destructive" /> Keep UniHub free for students
           </DialogTitle>
           <DialogDescription>
-            UniHub is free to use. Your contribution covers servers, AI costs, and lets us add
+            UniHub is free to use. Your contribution covers servers and lets us add
             more features. Any amount helps — even 500 RWF.
           </DialogDescription>
         </DialogHeader>

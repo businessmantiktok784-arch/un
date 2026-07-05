@@ -4,11 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useRole } from "@/hooks/useRole";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Menu, Search, Bell, Shield, LogOut, X, History
+  Menu, Search, Bell, Shield, LogOut, X, History, Settings
 } from "lucide-react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { cn } from "@/lib/utils";
@@ -122,17 +128,28 @@ export default function Navbar() {
 
           {user ? (
             <div className="hidden sm:flex items-center gap-1">
-              <Link to="/settings">
-                <Button variant="ghost" size="sm" className="gap-1.5 rounded-xl text-sm font-medium p-1">
-                  <Avatar className="h-7 w-7">
-                    <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email} />
-                    <AvatarFallback className="text-xs font-medium bg-primary/10 text-primary">
-                      {(user.email?.split("@")[0]?.charAt(0) || "U").toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="max-w-[100px] truncate">{user.email?.split("@")[0] || "Account"}</span>
-                </Button>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-xl h-9 w-9">
+                    <Avatar className="h-7 w-7">
+                      <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email} />
+                      <AvatarFallback className="text-xs font-medium bg-primary/10 text-primary">
+                        {(user.email?.split("@")[0]?.charAt(0) || "U").toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings" className="cursor-pointer">
+                      <Settings className="h-4 w-4 mr-2" /> Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => supabase.auth.signOut()} className="cursor-pointer text-destructive focus:text-destructive">
+                    <LogOut className="h-4 w-4 mr-2" /> Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ) : (
             <Link to="/login" className="hidden sm:block">

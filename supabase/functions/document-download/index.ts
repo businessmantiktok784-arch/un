@@ -1,6 +1,6 @@
 // Secure document download:
 // 1) verifies user JWT
-// 2) calls request_document_download RPC (charges 1 credit atomically; free if already paid / uploader / admin)
+// 2) calls request_document_download RPC (checks access, tracks download)
 // 3) mints a short-lived (60s) signed URL from the private 'documents' bucket
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -38,14 +38,13 @@ Deno.serve(async (req) => {
       return json({ error: "document_id_required" }, 400);
     }
 
-    // Charge credit + get storage path (RPC enforces auth.uid() server-side)
+    // Get storage path (RPC enforces auth.uid() server-side)
     const { data: rpcData, error: rpcErr } = await userClient.rpc("request_document_download", {
       _document_id: documentId,
     });
     if (rpcErr) {
       const msg = rpcErr.message || "rpc_error";
-      const status = msg.includes("insufficient_credits") ? 402
-                   : msg.includes("not_authenticated") ? 401
+      const status = msg.includes("not_authenticated") ? 401
                    : msg.includes("not_found") ? 404
                    : msg.includes("not_available") ? 403
                    : 500;
@@ -60,17 +59,13 @@ Deno.serve(async (req) => {
     const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data: signed, error: signErr } = await adminClient
       .storage.from("documents")
-      .createSignedUrl(row.storage_path, 60); // 60 seconds
+      .createSignedUrl(row.storage_path, 60);
 
     if (signErr || !signed?.signedUrl) {
       return json({ error: "signed_url_failed", details: signErr?.message }, 500);
     }
 
-    return json({
-      url: signed.signedUrl,
-      credits_spent: row.credits_spent ?? 0,
-      new_balance: row.new_balance ?? 0,
-    });
+    return json({ url: signed.signedUrl });
   } catch (e) {
     console.error("document-download error:", e);
     return json({ error: e instanceof Error ? e.message : "unknown" }, 500);

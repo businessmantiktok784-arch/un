@@ -1,4 +1,4 @@
-project_id = "ifnawwozcdsmphvxqygy"
+project_id = "kghpiprnplonshgpeitq"
 
-[functions.payment-webhook]
-verify_jwt = false
+[auth]
+enable_leaked_password_protection = true
