@@ -30,7 +30,8 @@ export default function AdminMonitoringPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+    const load = async () => {
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const [{ data: ev }, { data: er }] = await Promise.all([
         (supabase.from("analytics_events") as any)
@@ -38,6 +39,7 @@ export default function AdminMonitoringPage() {
         (supabase.from("error_logs") as any)
           .select("*").order("created_at", { ascending: false }).limit(100),
       ]);
+      if (cancelled) return;
       const evs = (ev ?? []) as EventRow[];
       const ers = (er ?? []) as ErrorRow[];
       setEvents(evs);
@@ -49,7 +51,13 @@ export default function AdminMonitoringPage() {
         uniqueUsers: new Set(evs.map(e => e.user_id).filter(Boolean)).size,
       });
       setLoading(false);
-    })();
+    };
+    load();
+    const ch = supabase.channel("admin-monitoring")
+      .on("postgres_changes", { event: "*", schema: "public", table: "analytics_events" }, () => { load(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "error_logs" }, () => { load(); })
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
   }, []);
 
   return (

@@ -14,11 +14,16 @@ export default function AdminAuditLogPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+    const load = async () => {
       const { data } = await supabase.from("admin_audit_log").select("*").order("created_at", { ascending: false }).limit(500);
+      if (cancelled) return;
       setRows((data ?? []) as Row[]);
       setLoading(false);
-    })();
+    };
+    load();
+    const ch = supabase.channel("admin-audit").on("postgres_changes", { event: "*", schema: "public", table: "admin_audit_log" }, () => { load(); }).subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
   }, []);
 
   return (

@@ -33,7 +33,7 @@ export default function AdminOpportunitiesPage() {
     setLoading(false);
   }, [toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); const ch = supabase.channel("admin-opportunities").on("postgres_changes", { event: "*", schema: "public", table: "opportunities" }, () => { load(); }).subscribe(); return () => { supabase.removeChannel(ch); }; }, [load]);
 
   const save = async () => {
     if (!editing || !editing.title.trim()) return toast({ title: "Title required", variant: "destructive" });

@@ -28,7 +28,7 @@ export default function AdminBrowsePage() {
     setLoading(false);
   }, [toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); const ch = supabase.channel("admin-browse").on("postgres_changes", { event: "*", schema: "public", table: "browse_categories" }, () => { load(); }).subscribe(); return () => { supabase.removeChannel(ch); }; }, [load]);
 
   const save = async () => {
     if (!editing || !editing.name.trim() || !editing.slug.trim()) return toast({ title: "Name and slug required", variant: "destructive" });

@@ -31,7 +31,7 @@ export default function AdminUsersPage() {
     setLoading(false);
   }, [toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); const ch = supabase.channel("admin-users").on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => { load(); }).subscribe(); return () => { supabase.removeChannel(ch); }; }, [load]);
 
   const filtered = rows.filter(u =>
     (u.full_name ?? "").toLowerCase().includes(search.toLowerCase()) ||

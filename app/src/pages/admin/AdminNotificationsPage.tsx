@@ -20,15 +20,20 @@ export default function AdminNotificationsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+    const load = async () => {
       const { data } = await supabase
         .from("admin_audit_log")
         .select("id,action,entity_type,entity_id,created_at")
         .order("created_at", { ascending: false })
         .limit(50);
+      if (cancelled) return;
       setEntries((data ?? []) as AuditEntry[]);
       setLoading(false);
-    })();
+    };
+    load();
+    const ch = supabase.channel("admin-notifications").on("postgres_changes", { event: "*", schema: "public", table: "admin_audit_log" }, () => { load(); }).subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
   }, []);
 
   return (

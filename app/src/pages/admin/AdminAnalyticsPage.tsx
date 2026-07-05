@@ -25,16 +25,25 @@ export default function AdminAnalyticsPage() {
   const [opps, setOpps] = useState<Point[]>([]);
 
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+    const load = async () => {
       const [u, d, o] = await Promise.all([
         supabase.from("profiles").select("created_at").order("created_at"),
         supabase.from("documents").select("created_at").order("created_at"),
         supabase.from("opportunities").select("created_at").order("created_at"),
       ]);
+      if (cancelled) return;
       setUsers(bucket((u.data ?? []) as { created_at: string }[]));
       setDocs(bucket((d.data ?? []) as { created_at: string }[]));
       setOpps(bucket((o.data ?? []) as { created_at: string }[]));
-    })();
+    };
+    load();
+    const ch = supabase.channel("admin-analytics")
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => { load(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "documents" }, () => { load(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "opportunities" }, () => { load(); })
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
   }, []);
 
   const cfg = { count: { label: "Count", color: "hsl(var(--primary))" } };

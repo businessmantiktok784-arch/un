@@ -64,7 +64,7 @@ export default function CommentsSection({ documentId }: Props) {
     setLoading(false);
   }, [documentId, toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); const ch = supabase.channel(`comments-${documentId}`).on("postgres_changes", { event: "*", schema: "public", table: "document_comments", filter: `document_id=eq.${documentId}` }, () => { load(); }).subscribe(); return () => { supabase.removeChannel(ch); }; }, [load, documentId]);
 
   const post = async (text: string, parentId: string | null) => {
     if (!user?.id) {

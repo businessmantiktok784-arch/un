@@ -36,7 +36,7 @@ export default function AdminOrganizationsPage() {
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => { loadOrgs(); }, []);
+  useEffect(() => { loadOrgs(); const ch = supabase.channel("admin-orgs").on("postgres_changes", { event: "*", schema: "public", table: "universities" }, () => { loadOrgs(); }).subscribe(); return () => { supabase.removeChannel(ch); }; }, []);
 
   async function loadOrgs() {
     setLoading(true);

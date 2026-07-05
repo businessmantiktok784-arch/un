@@ -29,7 +29,7 @@ export default function AdminSupportPage() {
     setLoading(false);
   }, [toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); const ch = supabase.channel("admin-support").on("postgres_changes", { event: "*", schema: "public", table: "support_content" }, () => { load(); }).subscribe(); return () => { supabase.removeChannel(ch); }; }, [load]);
 
   const save = async () => {
     if (!editing || !editing.title.trim()) return toast({ title: "Title required", variant: "destructive" });

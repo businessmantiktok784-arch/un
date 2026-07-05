@@ -14,7 +14,8 @@ export default function AdminOverview() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+    const load = async () => {
       const counts = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("universities").select("id", { count: "exact", head: true }),
@@ -23,6 +24,7 @@ export default function AdminOverview() {
         supabase.from("documents").select("id", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("contact_messages").select("id", { count: "exact", head: true }).eq("status", "new"),
       ]);
+      if (cancelled) return;
       setStats([
         { icon: Users, label: "Users", value: String(counts[0].count ?? 0), href: "/admin/users" },
         { icon: GraduationCap, label: "Universities", value: String(counts[1].count ?? 0), href: "/admin/universities" },
@@ -36,9 +38,19 @@ export default function AdminOverview() {
         .select("action, entity_type, created_at")
         .order("created_at", { ascending: false })
         .limit(10);
+      if (cancelled) return;
       setRecent(log ?? []);
       setLoading(false);
-    })();
+    };
+    load();
+    const ch = supabase.channel("admin-overview")
+      .on("postgres_changes", { event: "*", schema: "public", table: "documents" }, () => { load(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => { load(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "universities" }, () => { load(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "contact_messages" }, () => { load(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "admin_audit_log" }, () => { load(); })
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(ch); };
   }, []);
 
   return (

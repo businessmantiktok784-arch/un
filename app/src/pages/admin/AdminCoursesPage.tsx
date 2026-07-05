@@ -42,7 +42,7 @@ export default function AdminCoursesPage() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); const ch = supabase.channel("admin-courses").on("postgres_changes", { event: "*", schema: "public", table: "courses" }, () => { load(); }).subscribe(); return () => { supabase.removeChannel(ch); }; }, []);
 
   const filtered = courses.filter(c =>
     c.course_code.toLowerCase().includes(search.toLowerCase()) ||

@@ -29,7 +29,7 @@ export default function AdminDocumentsPage() {
     setLoading(false);
   }, [status, toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); const ch = supabase.channel("admin-documents").on("postgres_changes", { event: "*", schema: "public", table: "documents" }, () => { load(); }).subscribe(); return () => { supabase.removeChannel(ch); }; }, [load]);
 
   const filtered = rows.filter(d => d.title.toLowerCase().includes(search.toLowerCase()));
 

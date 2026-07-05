@@ -33,7 +33,7 @@ export default function AdminReportsPage() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); const ch = supabase.channel("admin-reports").on("postgres_changes", { event: "*", schema: "public", table: "content_reports" }, () => { load(); }).subscribe(); return () => { supabase.removeChannel(ch); }; }, []);
 
   const handleDismiss = async (id: string) => {
     const { error } = await supabase

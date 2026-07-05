@@ -28,7 +28,7 @@ export default function AdminContactPage() {
     setLoading(false);
   }, [toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); const ch = supabase.channel("admin-contact").on("postgres_changes", { event: "*", schema: "public", table: "contact_messages" }, () => { load(); }).subscribe(); return () => { supabase.removeChannel(ch); }; }, [load]);
 
   const sendReply = async () => {
     if (!open) return;

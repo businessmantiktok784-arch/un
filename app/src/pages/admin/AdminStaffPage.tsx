@@ -39,6 +39,8 @@ export default function AdminStaffPage() {
 
   useEffect(() => {
     loadStaff();
+    const ch = supabase.channel("admin-staff").on("postgres_changes", { event: "*", schema: "public", table: "user_roles" }, () => { loadStaff(); }).on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, () => { loadStaff(); }).subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, []);
 
   async function loadStaff() {

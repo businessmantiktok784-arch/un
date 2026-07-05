@@ -155,6 +155,21 @@ export default function DocumentDetailPage() {
     return () => { cancelled = true; };
   }, [id]);
 
+  // Real-time: refresh document details when that document changes
+  useEffect(() => {
+    if (!id) return;
+    const ch = supabase.channel(`doc-${id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "documents", filter: `id=eq.${id}` }, () => {
+        if (!id) return;
+        (async () => {
+          const { data } = await supabase.from("documents").select("*").eq("id", id).maybeSingle();
+          if (data) setDoc(data as DocRow);
+        })();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [id]);
+
   const handleDownload = async () => {
     if (!doc) return;
     setDownloading(true);

@@ -30,7 +30,7 @@ export default function AdminTestimonialsPage() {
     setLoading(false);
   }, [toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); const ch = supabase.channel("admin-testimonials").on("postgres_changes", { event: "*", schema: "public", table: "testimonials" }, () => { load(); }).subscribe(); return () => { supabase.removeChannel(ch); }; }, [load]);
 
   const save = async () => {
     if (!editing || !editing.student_name.trim() || !editing.quote.trim()) return toast({ title: "Name and quote required", variant: "destructive" });

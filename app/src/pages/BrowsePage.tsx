@@ -54,6 +54,7 @@ export default function BrowsePage() {
   const [docs, setDocs] = useState<DocRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Sync URL params (from hero search / command palette)
   useEffect(() => {
@@ -106,7 +107,15 @@ export default function BrowsePage() {
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [selectedType, searchQuery, sortBy, selectedUni, selectedFaculty, selectedYear, selectedSemester, currentPage]);
+  }, [selectedType, searchQuery, sortBy, selectedUni, selectedFaculty, selectedYear, selectedSemester, currentPage, refreshKey]);
+
+  // Real-time: re-fetch when documents table changes
+  useEffect(() => {
+    const ch = supabase.channel("browse-docs")
+      .on("postgres_changes", { event: "*", schema: "public", table: "documents" }, () => { setRefreshKey(k => k + 1); })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE));
 

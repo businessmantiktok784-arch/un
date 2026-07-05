@@ -31,7 +31,7 @@ export default function AdminUniversitiesPage() {
     setLoading(false);
   }, [toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); const ch = supabase.channel("admin-universities").on("postgres_changes", { event: "*", schema: "public", table: "universities" }, () => { load(); }).subscribe(); return () => { supabase.removeChannel(ch); }; }, [load]);
 
   const save = async () => {
     if (!editing || !editing.name.trim()) return toast({ title: "Name required", variant: "destructive" });
