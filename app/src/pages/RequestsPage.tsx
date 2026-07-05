@@ -54,7 +54,7 @@ export default function RequestsPage() {
   const [votedIds, setVotedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
-  const [filter, setFilter] = useState<"all" | "open" | "fulfilled">("all");
+  const [filter, setFilter] = useState<"all" | "open" | "fulfilled" | "mine">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"votes" | "recent">("votes");
   const [currentPage, setCurrentPage] = useState(1);
@@ -121,14 +121,15 @@ export default function RequestsPage() {
 
   const filtered = useMemo(() => {
     return requests
-      .filter((r) => filter === "all" || r.status === filter)
+      .filter((r) => filter === "all" || filter === "mine" || r.status === filter)
+      .filter((r) => filter !== "mine" || r.requester_id === user?.id)
       .filter((r) => {
         if (!searchQuery) return true;
         const q = searchQuery.toLowerCase();
         return r.title.toLowerCase().includes(q) || (r.course_code ?? "").toLowerCase().includes(q);
       })
       .sort((a, b) => sortBy === "votes" ? b.votes_count - a.votes_count : +new Date(b.created_at) - +new Date(a.created_at));
-  }, [requests, filter, searchQuery, sortBy]);
+  }, [requests, filter, searchQuery, sortBy, user?.id]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -252,8 +253,8 @@ export default function RequestsPage() {
             <Input placeholder="Search requests..." className="pl-9" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }} />
           </div>
           <div className="flex gap-2">
-            {(["all", "open", "fulfilled"] as const).map((f) => (
-              <Badge key={f} variant={filter === f ? "default" : "outline"} className="cursor-pointer capitalize" onClick={() => { setFilter(f); setCurrentPage(1); }}>{f}</Badge>
+            {(["all", "open", "fulfilled", "mine"] as const).map((f) => (
+              <Badge key={f} variant={filter === f ? "default" : "outline"} className="cursor-pointer capitalize" onClick={() => { setFilter(f); setCurrentPage(1); }}>{f === "mine" && isLoggedIn ? "My Requests" : f}</Badge>
             ))}
           </div>
           <div className="flex items-center gap-2">
@@ -274,7 +275,7 @@ export default function RequestsPage() {
           ) : paginated.length === 0 ? (
             <div className="py-16 text-center">
               <MessageSquarePlus className="mx-auto h-10 w-10 text-muted-foreground/50" />
-              <p className="mt-3 text-sm text-muted-foreground">No requests yet — be the first to post!</p>
+              <p className="mt-3 text-sm text-muted-foreground">{filter === "mine" ? "You haven't posted any requests yet." : "No requests yet — be the first to post!"}</p>
             </div>
           ) : paginated.map((req, i) => {
             const answers = answersByReq[req.id] ?? [];

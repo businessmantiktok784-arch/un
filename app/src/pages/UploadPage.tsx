@@ -168,6 +168,7 @@ export default function UploadPage() {
           academic_year: academicYear || null,
           semester: semester || null,
           doc_type: (docType as any) || "Notes",
+          tags: tags.length > 0 ? tags : null,
           storage_path: path,
           file_size_bytes: file.size,
           mime_type: "application/pdf",

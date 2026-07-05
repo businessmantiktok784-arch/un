@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { FileText, GraduationCap, Briefcase, Search } from "lucide-react";
+import { FileText, GraduationCap, Briefcase, Search, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const pages = [
   { label: "Browse Documents", href: "/browse", icon: FileText },
@@ -9,18 +10,37 @@ const pages = [
   { label: "Document Requests", href: "/requests", icon: Search },
 ];
 
-const courses = [
-  { label: "CSC 2103 – Data Structures", href: "/browse?course=CSC+2103" },
-  { label: "CHM 2201 – Organic Chemistry II", href: "/browse?course=CHM+2201" },
-  { label: "ACC 1101 – Financial Accounting", href: "/browse?course=ACC+1101" },
-  { label: "MAT 1101 – Calculus I", href: "/browse?course=MAT+1101" },
-  { label: "CS 6301 – Machine Learning", href: "/browse?course=CS+6301" },
-];
+interface CourseSuggestion {
+  course_code: string;
+  title: string;
+}
 
 export default function SearchCommandPalette() {
   const [open, setOpen] = useState(false);
+  const [courses, setCourses] = useState<CourseSuggestion[]>([]);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Fetch courses from Supabase when the dialog opens
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      const { data } = await supabase
+        .from("courses")
+        .select("course_code, title")
+        .order("title")
+        .limit(20);
+      if (!cancelled) {
+        setCourses((data ?? []) as CourseSuggestion[]);
+        setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [open]);
+
+  // Keyboard shortcut: ⌘K / Ctrl+K
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
@@ -63,12 +83,21 @@ export default function SearchCommandPalette() {
             ))}
           </CommandGroup>
           <CommandGroup heading="Popular Courses">
-            {courses.map((c) => (
-              <CommandItem key={c.href} onSelect={() => go(c.href)}>
-                <GraduationCap className="mr-2 h-4 w-4 text-muted-foreground" />
-                {c.label}
-              </CommandItem>
-            ))}
+            {loading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              courses.map((c) => (
+                <CommandItem
+                  key={c.course_code}
+                  onSelect={() => go(/browse?course=)}
+                >
+                  <GraduationCap className="mr-2 h-4 w-4 text-muted-foreground" />
+                  {c.course_code} – {c.title}
+                </CommandItem>
+              ))
+            )}
           </CommandGroup>
         </CommandList>
       </CommandDialog>
