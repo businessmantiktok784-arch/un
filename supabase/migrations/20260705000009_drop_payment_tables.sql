@@ -316,18 +316,21 @@ $$;
 -- ################################################################
 
 -- 6a. user_roles: allow INSERT (used by sync_admin_role)
+DROP POLICY IF EXISTS "Users insert own role" ON public.user_roles;
 CREATE POLICY "Users insert own role"
   ON public.user_roles FOR INSERT
   TO authenticated
   WITH CHECK (auth.uid() = user_id);
 
 -- 6b. admin_audit_log: allow INSERT (used by log_admin_action)
+DROP POLICY IF EXISTS "Admins insert audit log" ON public.admin_audit_log;
 CREATE POLICY "Admins insert audit log"
   ON public.admin_audit_log FOR INSERT
   TO authenticated
   WITH CHECK (auth.uid() = actor_id);
 
 -- 6c. profiles: allow admins to UPDATE any profile (used by admin_suspend_user)
+DROP POLICY IF EXISTS "Admins update all profiles" ON public.profiles;
 CREATE POLICY "Admins update all profiles"
   ON public.profiles FOR UPDATE
   TO authenticated
@@ -335,12 +338,14 @@ CREATE POLICY "Admins update all profiles"
   WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
 -- 6d. document_downloads: allow INSERT (used by request_document_download)
+DROP POLICY IF EXISTS "Users insert own downloads" ON public.document_downloads;
 CREATE POLICY "Users insert own downloads"
   ON public.document_downloads FOR INSERT
   TO authenticated
   WITH CHECK (auth.uid() = user_id);
 
 -- 6e. ai_usage: allow INSERT (used by consume_ai_credit)
+DROP POLICY IF EXISTS "Users insert own AI usage" ON public.ai_usage;
 CREATE POLICY "Users insert own AI usage"
   ON public.ai_usage FOR INSERT
   TO authenticated
