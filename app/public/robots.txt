@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /settings
+Disallow: /profile
+Disallow: /notifications
+Disallow: /buy-credits
+Disallow: /upload
+
+Sitemap: https://unihub.rw/sitemap.xml
