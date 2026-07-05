@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useSEO } from "@/lib/useSEO";
+import { ROLE_HIERARCHY } from "@/lib/rbac";
 import { checkRateLimit } from "@/lib/security";
 
 const GoogleIcon = () => (
@@ -35,12 +36,12 @@ export default function LoginPage() {
       const user = data.user;
       if (!user) { setBootChecking(false); return; }
       try { await supabase.rpc("sync_admin_role"); } catch { /* ignore */ }
-      const [{ data: profile }, { data: roleRow }] = await Promise.all([
+      const [{ data: profile }, { data: roles }] = await Promise.all([
         supabase.from("profiles").select("year_of_study").eq("id", user.id).maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["super_admin","org_admin","manager","staff","moderator"]).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["super_admin","admin","org_admin","manager","staff","moderator"]).maybeSingle(),
       ]);
       if (cancelled) return;
-      if (roleRow) { navigate("/admin", { replace: true }); return; }
+      if (roles && (ROLE_HIERARCHY[roles.role as keyof typeof ROLE_HIERARCHY] ?? -1) >= ROLE_HIERARCHY.moderator) { navigate("/admin", { replace: true }); return; }
       if (!profile?.year_of_study) { navigate("/onboarding", { replace: true }); return; }
       navigate(redirectTo, { replace: true });
     })();

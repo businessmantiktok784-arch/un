@@ -47,7 +47,7 @@ export default function AdminStaffPage() {
       const { data: roles } = await supabase
         .from("user_roles")
         .select("*")
-        .in("role", ["moderator", "staff", "manager", "org_admin", "super_admin"])
+        .in("role", ["moderator", "staff", "manager", "org_admin", "admin", "super_admin"])
         .order("created_at", { ascending: false });
 
       if (roles) {

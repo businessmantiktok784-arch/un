@@ -4,6 +4,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { ROLE_HIERARCHY } from "@/lib/rbac";
 import { useBookmarks as useLocalBookmarks } from "@/lib/localStore";
 
 interface CreditContextType {
@@ -56,7 +57,7 @@ export function CreditProvider({ children }: { children: ReactNode }) {
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
-      .in("role", ["super_admin","org_admin","manager","staff","moderator"])
+      .in("role", ["super_admin","admin","org_admin","manager","staff","moderator"])
       .maybeSingle()
       .then(({ data }) => setIsAdmin(!!data));
   }, [user?.id]);

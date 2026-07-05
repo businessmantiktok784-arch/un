@@ -13,6 +13,7 @@ import { useUniversities } from "@/hooks/useLiveData";
 import { useSEO } from "@/lib/useSEO";
 import { isAdminEmail } from "@/lib/adminEmails";
 import { sanitizeInput } from "@/lib/security";
+import { ROLE_HIERARCHY } from "@/lib/rbac";
 
 export default function OnboardingPage() {
   const { universities } = useUniversities();
@@ -39,7 +40,8 @@ export default function OnboardingPage() {
       const { data: profile } = await supabase.from("profiles").select("year_of_study,university,program").eq("id", user.id).maybeSingle();
       if (profile?.year_of_study) {
         // already onboarded — bounce
-        if (isAdminEmail(user.email)) { navigate("/admin", { replace: true }); return; }
+        const { data: roleRow } = await supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["super_admin","admin","org_admin","manager","staff","moderator"]).maybeSingle();
+        if (roleRow && (ROLE_HIERARCHY[roleRow.role as keyof typeof ROLE_HIERARCHY] ?? -1) >= ROLE_HIERARCHY.moderator) { navigate("/admin", { replace: true }); return; }
         navigate("/", { replace: true });
         return;
       }
@@ -89,8 +91,11 @@ export default function OnboardingPage() {
       return;
     }
     toast({ title: "Welcome to UniHub!" });
-    if (user && isAdminEmail(user.email)) navigate("/admin", { replace: true });
-    else navigate("/", { replace: true });
+    if (user) {
+      const { data: roleRow } = await supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["super_admin","admin","org_admin","manager","staff","moderator"]).maybeSingle();
+      if (roleRow && (ROLE_HIERARCHY[roleRow.role as keyof typeof ROLE_HIERARCHY] ?? -1) >= ROLE_HIERARCHY.moderator) { navigate("/admin", { replace: true }); return; }
+    }
+    navigate("/", { replace: true });
   };
 
   if (checking) {

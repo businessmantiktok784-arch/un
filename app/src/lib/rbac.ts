@@ -3,6 +3,7 @@
 
 export type AppRole =
   | "super_admin"      // Full platform access - can manage everything including other admins
+  | "admin"            // Legacy admin (set by sync_admin_role for admin_emails users)
   | "org_admin"        // Organization-level admin - manages their organization
   | "manager"          // Department/team manager - manages content and users in their scope
   | "staff"            // Staff member - can create/edit content, moderate
@@ -16,12 +17,14 @@ export const ROLE_HIERARCHY: Record<AppRole, number> = {
   staff: 2,
   manager: 3,
   org_admin: 4,
-  super_admin: 5,
+  admin: 5,
+  super_admin: 6,
 };
 
 // Role display labels
 export const ROLE_LABELS: Record<AppRole, string> = {
   super_admin: "Super Admin",
+  admin: "Admin",
   org_admin: "Organization Admin",
   manager: "Manager",
   staff: "Staff",
@@ -32,6 +35,7 @@ export const ROLE_LABELS: Record<AppRole, string> = {
 // Role descriptions
 export const ROLE_DESCRIPTIONS: Record<AppRole, string> = {
   super_admin: "Full platform control. Can manage all organizations, admins, and system settings.",
+  admin: "Full platform access. Set via admin_emails list.",
   org_admin: "Manages their organization: users, content, and settings within their scope.",
   manager: "Manages teams and content within their department. Can approve/reject and manage staff.",
   staff: "Can create and edit content, manage documents, and assist users.",
@@ -223,8 +227,8 @@ export const ROLE_PERMISSIONS: Record<AppRole, Permission[]> = {
 
 // Helper: Check if a role has a specific permission
 export function hasPermission(role: AppRole, permission: Permission): boolean {
-  if (ROLE_HIERARCHY[role] >= ROLE_HIERARCHY.super_admin) {
-    return true; // Super admin has all permissions
+  if (ROLE_HIERARCHY[role] >= ROLE_HIERARCHY.admin) {
+    return true; // Admin and super admin have all permissions
   }
   return ROLE_PERMISSIONS[role]?.includes(permission) ?? false;
 }

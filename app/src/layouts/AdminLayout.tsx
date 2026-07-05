@@ -4,7 +4,7 @@ import AdminSidebar from "@/components/AdminSidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useRole } from "@/hooks/useRole";
-import { type Permission, hasPermission } from "@/lib/rbac";
+import { type Permission, ROLE_HIERARCHY, hasPermission } from "@/lib/rbac";
 
 // Route-to-permission mapping for RBAC
 const ROUTE_PERMISSIONS: Record<string, Permission> = {
@@ -61,8 +61,7 @@ export default function AdminLayout() {
       }
 
       // Check if user has minimum moderator access
-      const moderatorRoles = ["moderator", "staff", "manager", "org_admin", "super_admin"];
-      if (!moderatorRoles.includes(role)) {
+      if ((ROLE_HIERARCHY[role] ?? -1) < ROLE_HIERARCHY.moderator) {
         setState("deny");
         return;
       }
